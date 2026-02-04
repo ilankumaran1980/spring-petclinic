@@ -1,18 +1,32 @@
-# Stage 1: Build the application
-FROM eclipse-temurin:17-jdk-jammy AS build
+# Stage 1: Build the application using Maven
+# Using the AWS Public ECR mirror to avoid Docker Hub rate limits
+FROM public.ecr.aws/docker/library/eclipse-temurin:17-jdk-jammy AS build
+
+# Set the working directory inside the container
 WORKDIR /app
-# Copy the maven wrapper and pom.xml first to cache dependencies
+
+# Copy the Maven wrapper and pom.xml first to leverage Docker cache
+# This avoids re-downloading dependencies if only your code changes
 COPY .mvn/ .mvn
 COPY mvnw pom.xml ./
 RUN ./mvnw dependency:resolve
-# Copy source code and build the jar
+
+# Copy the source code and build the final JAR file
 COPY src ./src
 RUN ./mvnw package -DskipTests
 
-# Stage 2: Create the final lightweight image
-FROM eclipse-temurin:17-jre-jammy
+# Stage 2: Create the final production image
+# Use a smaller JRE (Runtime) image for better security and smaller size
+FROM public.ecr.aws/docker/library/eclipse-temurin:17-jre-jammy
+
 WORKDIR /app
-# Copy only the built jar from the build stage
+
+# Copy only the compiled .jar file from the 'build' stage
+# The wildcard *.jar handles different version numbers in the filename
 COPY --from=build /app/target/*.jar app.jar
+
+# Expose the default Spring Boot port
 EXPOSE 8080
+
+# Command to run the application
 ENTRYPOINT ["java", "-jar", "app.jar"]
