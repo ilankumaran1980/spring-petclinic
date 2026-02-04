@@ -24,9 +24,9 @@ phases:
       - docker push $REPOSITORY_URI:latest
       - docker push $REPOSITORY_URI:$IMAGE_TAG
       - echo Writing image definitions file...
-      # Make sure "spring-petclinic" matches your ECS Container Name!
+      # IMPORTANT: Replace "spring-petclinic" with your actual Container Name from your ECS Task Definition
       - printf '[{"name":"spring-petclinic","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
 
 artifacts:
-  files: 
+  files:
     - imagedefinitions.json
